@@ -1,0 +1,67 @@
+name: Release Docker Image
+
+on:
+  workflow_call:
+    inputs:
+      repository_name:
+        required: true
+        type: string
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_DEFAULT_REGION:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+jobs:
+  version:
+    runs-on: ubuntu-20.04
+    outputs:
+      dev_tag: ${{ steps.dev_image.outputs.tag }}
+      release_tag: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Pick current image version
+        id: dev_image
+        run: echo "::set-output name=tag::$(git rev-parse --short HEAD)"
+      - name: Check outputs
+        run: echo ${{ steps.dev_image.outputs.tag }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Generate release image tag
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.repository_name }}
+          tags: |
+            type=semver,pattern={{version}}
+          flavor: |
+            latest=false
+  release:
+    needs: version
+    runs-on: ubuntu-20.04
+    container: amazon/aws-cli:2.5.7
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: Install system packages
+        run: yum install jq-1.5 -y -q
+
+      - name: Put release tag
+        run: |
+          MANIFEST=$(aws ecr batch-get-image --repository-name ${{ inputs.repository_name }} --image-ids imageTag=${{ needs.version.outputs.dev_tag }} --output json | jq --raw-output --join-output '.images[0].imageManifest')
+          aws ecr put-image --repository-name ${{ inputs.repository_name }} --image-tag ${{ needs.version.outputs.release_tag }} --image-manifest "$MANIFEST"
