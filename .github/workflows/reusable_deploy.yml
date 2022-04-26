@@ -65,6 +65,7 @@ jobs:
         with:
           name: helm-values
           path: ${{ inputs.chart_path }}
+      - run: cat ${{ inputs.chart_path }}/values-${{ inputs.env_name }}.yaml
       - name: update ${{ inputs.deploy_name }} service
         run: |
           helm upgrade --install \
