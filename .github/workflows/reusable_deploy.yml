@@ -72,6 +72,6 @@ jobs:
         run: |
           helm upgrade --install \
           --namespace ${{ inputs.namespace }} --create-namespace \
-          -f ${{steps.download.outputs.download-path}}/values-${{ inputs.env_name }}.yaml \
+          -f ${{ inputs.env_name }}.yaml \
           --set image.tag=${{ inputs.version }} \
           ${{ inputs.deploy_name }} ${{ inputs.chart_path }}
