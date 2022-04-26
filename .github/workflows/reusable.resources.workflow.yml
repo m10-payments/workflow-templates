@@ -31,9 +31,9 @@ jobs:
       TF_VAR_pg_rds_db_username: ${{ secrets.DEV_PG_RDS_DB_USERNAME }}
       TF_VAR_pg_rds_db_password: ${{ secrets.DEV_PG_RDS_DB_PASSWORD }}
       TF_VAR_kafka_bootstrap_servers: "b-1.dev-msk-cluster.y7r5c4.c6.kafka.eu-central-1.amazonaws.com:9092,b-2.dev-msk-cluster.y7r5c4.c6.kafka.eu-central-1.amazonaws.com:9092,b-3.dev-msk-cluster.y7r5c4.c6.kafka.eu-central-1.amazonaws.com:9092"
-      TF_VAR_k8s_namespace: ${{ inputs.prefix }}
-      TF_VAR_db_prefix: ${{ inputs.prefix }}
-      TF_VAR_topic_prefix: ${{ inputs.prefix }}
+      #TF_VAR_k8s_namespace: ${{ inputs.prefix }}
+      #TF_VAR_db_prefix: ${{ inputs.prefix }}
+      #TF_VAR_topic_prefix: ${{ inputs.prefix }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -47,6 +47,7 @@ jobs:
       - run: echo "TF_VAR_k8s_namespace=$(echo $GITHUB_REF_NAME | sed -r 's/\//-/g' | awk '{print tolower($0)}')" >> $GITHUB_ENV
       - run: echo "TF_VAR_db_prefix=$(echo $GITHUB_REF_NAME | sed -r 's/\//-/g' | awk '{print tolower($0)}')" >> $GITHUB_ENV
       - run: echo "TF_VAR_topic_prefix=$(echo $GITHUB_REF_NAME | sed -r 's/\//-/g' | awk '{print tolower($0)}')" >> $GITHUB_ENV
+      - run: echo "TF_VAR_aws_route53_record_name=$(echo $GITHUB_REF_NAME | sed -r 's/\//-/g' | awk '{print tolower($0)}')" >> $GITHUB_ENV
 
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -96,6 +97,16 @@ jobs:
         working-directory: ./terraform/feature/k8s
         run: terraform validate -no-color
 
+      - name: "[dns] Terraform Init"
+        id: init-dns
+        working-directory: ./terraform/feature/dns
+        run: terraform init -backend-config="key=feature/${{ env.PRFX }}/dns"
+
+      - name: "[dns] Terraform Validate"
+        id: validate-dns
+        working-directory: ./terraform/feature/dns
+        run: terraform validate -no-color
+
       - name: install deps
         run: sudo apt-get update && sudo apt-get install apt-transport-https ca-certificates curl build-essential openvpn libxml2-utils -y
 
@@ -138,6 +149,16 @@ jobs:
         if: steps.plan-k8s.outcome == 'failure'
         run: exit 1
 
+      - name: "[dns] Terraform Plan"
+        id: plan-dns
+        working-directory: ./terraform/feature/dns
+        run: terraform plan -no-color -input=false
+        continue-on-error: true
+
+      - name: "[dns] Terraform Plan Status"
+        if: steps.plan-dns.outcome == 'failure'
+        run: exit 1
+
       - name: "[dbs] Terraform Apply"
         working-directory: ./terraform/feature/dbs
         id: apply-dbs
@@ -151,4 +172,9 @@ jobs:
       - name: "[k8s] Terraform Apply"
         working-directory: ./terraform/feature/k8s
         id: apply-k8s
+        run: terraform apply -auto-approve -input=false
+
+      - name: "[dns] Terraform Apply"
+        working-directory: ./terraform/feature/dns
+        id: apply-dns
         run: terraform apply -auto-approve -input=false
