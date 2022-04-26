@@ -59,7 +59,12 @@ jobs:
       - name: Open VPN
         run: echo $OVPN_PROFILE_ENCODED | base64 -d > ci.ovpn && sudo openvpn --config ci.ovpn &
       - name: sleep
-        run: sleep 15
+        run: sleep 10
+      - name: Download Helm values file
+        uses: actions/download-artifact@v3
+        with:
+          name: helm-values
+          path: ${{ inputs.chart_path }}
       - name: update ${{ inputs.deploy_name }} service
         run: |
           helm upgrade --install \
