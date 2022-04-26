@@ -67,11 +67,11 @@ jobs:
           name: helm-values
           # path: ${{ inputs.chart_path }}
       - name: 'Echo download path'
-        run: echo ${{steps.download.outputs.download-path}}
+        run: ls ${{steps.download.outputs.download-path}}
       - name: update ${{ inputs.deploy_name }} service
         run: |
           helm upgrade --install \
           --namespace ${{ inputs.namespace }} --create-namespace \
-          -f ${{ inputs.chart_path }}/values-${{ inputs.env_name }}.yaml \
+          -f ${{steps.download.outputs.download-path}}/values-${{ inputs.env_name }}.yaml \
           --set image.tag=${{ inputs.version }} \
           ${{ inputs.deploy_name }} ${{ inputs.chart_path }}
