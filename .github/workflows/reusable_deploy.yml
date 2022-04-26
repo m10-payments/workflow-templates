@@ -61,11 +61,13 @@ jobs:
       - name: sleep
         run: sleep 10
       - name: Download Helm values file
+        id: download
         uses: actions/download-artifact@v3
         with:
           name: helm-values
-          path: ${{ inputs.chart_path }}
-      - run: cat ${{ inputs.chart_path }}/values-${{ inputs.env_name }}.yaml
+          # path: ${{ inputs.chart_path }}
+      - name: 'Echo download path'
+        run: echo ${{steps.download.outputs.download-path}}
       - name: update ${{ inputs.deploy_name }} service
         run: |
           helm upgrade --install \
