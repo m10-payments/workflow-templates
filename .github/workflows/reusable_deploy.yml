@@ -1,0 +1,69 @@
+name: Deploy service
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      env_name:
+        required: true
+        type: string
+      deploy_name:
+        required: true
+        type: string
+      chart_path:
+        required: true
+        type: string
+      namespace:
+        required: false
+        type: string
+        default: "default"
+
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_DEFAULT_REGION:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      CLUSTER_NAME:
+        required: true
+      OVPN_PROFILE_ENCODED:
+        required: true
+jobs:
+  deploy:
+    name: "Deploy version: ${{ inputs.version }} to env: ${{ inputs.env_name }}"
+    runs-on: ubuntu-20.04
+    environment: ${{ inputs.env_name }}
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
+      OVPN_PROFILE_ENCODED: ${{ secrets.OVPN_PROFILE_ENCODED }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: add gcloud repo
+        run: echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+      - name: add cloud repo pub key
+        run: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+      - name: add helm repo
+        run: echo "deb https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+      - name: add helm repo pub key
+        run: curl https://baltocdn.com/helm/signing.asc | sudo apt-key add -
+      - name: install deps
+        run: sudo apt-get update && sudo apt-get install apt-transport-https ca-certificates curl build-essential awscli openvpn kubectl helm libxml2-utils -y
+      - name: authorize on EKS
+        run: aws eks update-kubeconfig --region eu-central-1 --name $CLUSTER_NAME
+      - name: Open VPN
+        run: echo $OVPN_PROFILE_ENCODED | base64 -d > ci.ovpn && sudo openvpn --config ci.ovpn &
+      - name: sleep
+        run: sleep 15
+      - name: update ${{ inputs.deploy_name }} service
+        run: |
+          helm upgrade --install \
+          --namespace ${{ inputs.namespace }} --create-namespace \
+          -f ${{ inputs.chart_path }}/values-${{ inputs.env_name }}.yaml \
+          --set image.tag=${{ inputs.version }} \
+          ${{ inputs.deploy_name }} ${{ inputs.chart_path }}
