@@ -15,6 +15,7 @@ on:
         required: true
 jobs:
   version:
+    name: Generate Docker Image Tag
     runs-on: ubuntu-20.04
     outputs:
       dev_tag: ${{ steps.dev_image.outputs.tag }}
@@ -47,6 +48,7 @@ jobs:
           flavor: |
             latest=false
   release:
+    name: Set Tag to Docker Registry
     needs: version
     runs-on: ubuntu-20.04
     container: amazon/aws-cli:2.5.7
