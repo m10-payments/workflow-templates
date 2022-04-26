@@ -59,11 +59,19 @@ jobs:
       - name: Open VPN
         run: echo $OVPN_PROFILE_ENCODED | base64 -d > ci.ovpn && sudo openvpn --config ci.ovpn &
       - name: sleep
-        run: sleep 15
+        run: sleep 10
+      - name: Download Helm values file
+        id: download
+        uses: actions/download-artifact@v3
+        with:
+          name: helm-values
+      - name: 'Echo download path'
+        run: ls ${{steps.download.outputs.download-path}}
       - name: update ${{ inputs.deploy_name }} service
         run: |
           helm upgrade --install \
-          --namespace ${{ inputs.namespace }} --create-namespace \
-          -f ${{ inputs.chart_path }}/values-${{ inputs.env_name }}.yaml \
+          --create-namespace \
+          --namespace ${{ inputs.namespace }} \
+          -f ${{ inputs.env_name }}.yaml \
           --set image.tag=${{ inputs.version }} \
           ${{ inputs.deploy_name }} ${{ inputs.chart_path }}
