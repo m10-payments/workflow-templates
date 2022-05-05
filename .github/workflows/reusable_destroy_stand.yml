@@ -1,0 +1,175 @@
+name: Destroy stand
+
+on:
+  workflow_call:
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_DEFAULT_REGION:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      OVPN_PROFILE_ENCODED:
+        required: true
+      DEV_KUBE_CONFIG:
+        required: true  
+      GH_TOKEN:
+        required: true
+      DEV_PG_RDS_DB_PRIVATE_ADDRESS:
+        required: true
+      DEV_PG_RDS_DB_USERNAME:
+        required: true
+      DEV_PG_RDS_DB_PASSWORD:
+        required: true
+
+jobs:
+  delete:
+    if: github.event.ref_type == 'branch'
+    runs-on: ubuntu-20.04
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      DEV_KUBE_CONFIG: ${{ secrets.DEV_KUBE_CONFIG }}
+      OVPN_PROFILE_ENCODED: ${{ secrets.OVPN_PROFILE_ENCODED }}
+      TF_VAR_pg_rds_db_private_address: ${{ secrets.DEV_PG_RDS_DB_PRIVATE_ADDRESS }}
+      TF_VAR_pg_rds_db_username: ${{ secrets.DEV_PG_RDS_DB_USERNAME }}
+      TF_VAR_pg_rds_db_password: ${{ secrets.DEV_PG_RDS_DB_PASSWORD }}
+      TF_VAR_kafka_bootstrap_servers: "b-1.dev-msk-cluster.y7r5c4.c6.kafka.eu-central-1.amazonaws.com:9092,b-2.dev-msk-cluster.y7r5c4.c6.kafka.eu-central-1.amazonaws.com:9092,b-3.dev-msk-cluster.y7r5c4.c6.kafka.eu-central-1.amazonaws.com:9092"
+    steps:
+      - run: echo "Clean up stand for branch ${{ github.event.ref }}"
+      - run: echo "PRFX=$(echo ${{ github.event.ref }} | sed -r 's/\//-/g' | awk '{print tolower($0)}')" >> $GITHUB_ENV
+      - run: echo "TF_VAR_k8s_namespace=$(echo ${{ github.event.ref }} | sed -r 's/\//-/g' | awk '{print tolower($0)}')" >> $GITHUB_ENV
+      - run: echo "TF_VAR_db_prefix=$(echo ${{ github.event.ref }} | sed -r 's/\//-/g' | awk '{print tolower($0)}')" >> $GITHUB_ENV
+      - run: echo "TF_VAR_topic_prefix=$(echo ${{ github.event.ref }} | sed -r 's/\//-/g' | awk '{print tolower($0)}')" >> $GITHUB_ENV
+      - run: echo "TF_VAR_aws_route53_record_name=$(echo ${{ github.event.ref }} | sed -r 's/\//-/g' | awk '{print tolower($0)}')" >> $GITHUB_ENV
+
+      - run: env
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          repository: m10-payments/devops-infrastructure
+          ref: 'master'
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - run: |
+          git config --local --remove-section http."https://github.com/"
+          git config --global url."https://foo:${GH_TOKEN}@github.com/m10-payments".insteadOf "https://github.com/m10-payments"
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: "[dbs] Terraform Init"
+        id: init-dbs
+        working-directory: ./terraform/feature/dbs
+        run: terraform init -backend-config="key=feature/${{ env.PRFX }}/dbs"
+
+      - name: "[dbs] Terraform Validate"
+        id: validate-dbs
+        working-directory: ./terraform/feature/dbs
+        run: terraform validate -no-color
+
+      - name: "[kafka] Terraform Init"
+        id: init-kafka
+        working-directory: ./terraform/feature/kafka
+        run: terraform init -backend-config="key=feature/${{ env.PRFX }}/kafka"
+
+      - name: "[kafka] Terraform Validate"
+        id: validate-kafka
+        working-directory: ./terraform/feature/kafka
+        run: terraform validate -no-color
+
+      - name: "[k8s] Terraform Init"
+        id: init-k8s
+        working-directory: ./terraform/feature/k8s
+        run: terraform init -backend-config="key=feature/${{ env.PRFX }}/k8s"
+
+      - name: "[k8s] Terraform Validate"
+        id: validate-k8s
+        working-directory: ./terraform/feature/k8s
+        run: terraform validate -no-color
+
+      - name: "[dns] Terraform Init"
+        id: init-dns
+        working-directory: ./terraform/feature/dns
+        run: terraform init -backend-config="key=feature/${{ env.PRFX }}/dns"
+
+      - name: "[dns] Terraform Validate"
+        id: validate-dns
+        working-directory: ./terraform/feature/dns
+        run: terraform validate -no-color
+
+      - name: install deps
+        run: sudo apt-get update && sudo apt-get install apt-transport-https ca-certificates curl build-essential openvpn libxml2-utils -y
+
+      - name: Open VPN
+        run: echo $OVPN_PROFILE_ENCODED | base64 -d > ci.ovpn && sudo openvpn --config ci.ovpn &
+
+      - name: Set kubeconfig
+        run: echo $DEV_KUBE_CONFIG | base64 -d > dev_k8s
+
+      - name: Set terraform var
+        run: echo "TF_VAR_k8s_config_path=$(echo $GITHUB_WORKSPACE/dev_k8s)" >> $GITHUB_ENV
+
+      - name: "[dbs] Terraform Plan"
+        id: plan-dbs
+        working-directory: ./terraform/feature/dbs
+        run: terraform plan -no-color -input=false
+        continue-on-error: true
+
+      - name: "[dbs] Terraform Plan Status"
+        if: steps.plan-dbs.outcome == 'failure'
+        run: exit 1
+
+      - name: "[kafka] Terraform Plan"
+        id: plan-kafka
+        working-directory: ./terraform/feature/kafka
+        run: terraform plan -no-color -input=false
+        continue-on-error: true
+
+      - name: "[kafka] Terraform Plan Status"
+        if: steps.plan-kafka.outcome == 'failure'
+        run: exit 1
+
+      - name: "[k8s] Terraform Plan"
+        id: plan-k8s
+        working-directory: ./terraform/feature/k8s
+        run: terraform plan -no-color -input=false
+        continue-on-error: true
+
+      - name: "[k8s] Terraform Plan Status"
+        if: steps.plan-k8s.outcome == 'failure'
+        run: exit 1
+
+      - name: "[dns] Terraform Plan"
+        id: plan-dns
+        working-directory: ./terraform/feature/dns
+        run: terraform plan -no-color -input=false
+        continue-on-error: true
+
+      - name: "[dns] Terraform Plan Status"
+        if: steps.plan-dns.outcome == 'failure'
+        run: exit 1
+
+      - name: "[dbs] Terraform Destroy"
+        working-directory: ./terraform/feature/dbs
+        id: destroy-dbs
+        run: terraform destroy -auto-approve -input=false
+
+      - name: "[kafka] Terraform destroy"
+        working-directory: ./terraform/feature/kafka
+        id: destroy-kafka
+        run: terraform destroy -auto-approve -input=false
+
+      - name: "[k8s] Terraform destroy"
+        working-directory: ./terraform/feature/k8s
+        id: destroy-k8s
+        run: terraform destroy -auto-approve -input=false
+
+      - name: "[dns] Terraform destroy"
+        working-directory: ./terraform/feature/dns
+        id: destroy-dns
+        run: terraform destroy -auto-approve -input=false
