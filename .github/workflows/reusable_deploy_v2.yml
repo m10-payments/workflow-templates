@@ -1,0 +1,43 @@
+name: Deploy service
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      env_name:
+        required: true
+        type: string
+      argo_app_name:
+        required: true
+        type: string
+      namespace:
+        required: false
+        type: string
+        default: "default"
+    secrets:
+      GH_TOKEN:
+        required: true
+jobs:
+  deploy:
+    name: "Deploy version: ${{ inputs.version }} to env: ${{ inputs.env_name }}"
+    runs-on: ubuntu-20.04
+    environment: ${{ inputs.env_name }}
+    steps:
+      - name: checkout app repo
+        uses: actions/checkout@v2
+      - name: Checkout argocd repo
+        uses: actions/checkout@v3
+        with:
+          repository: m10-payments/argocd
+          ref: 'main'
+          token: ${{ secrets.GH_TOKEN }}
+      - name: update ${{ inputs.argo_app_name }} service
+        run: |
+          echo -n '${{ inputs.version }}' > ./${{ inputs.argo_app_name }}/version.txt
+          git config user.name github-actions
+          git config user.email github-actions@pashapay.az
+          git add version.txt
+          git commit -m "chore(release): rollout ${{ inputs.argo_app_name }} v${{ inputs.version }}"
+          git push
