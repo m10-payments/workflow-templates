@@ -36,6 +36,6 @@ jobs:
           echo -n '${{ inputs.version }}' > ./${{ inputs.argo_app_name }}/version-${{ inputs.env_name }}.txt
           git config user.name github-actions
           git config user.email github-actions@pashapay.az
-          git add ./${{ inputs.argo_app_name }}/version.txt
-          git commit --allow-empty -m "chore(release): rollout ${{ inputs.argo_app_name }} v${{ inputs.version }}"
+          git add ./${{ inputs.argo_app_name }}/version-${{ inputs.env_name }}.txt
+          git commit --allow-empty -m "chore(release): rollout ${{ inputs.argo_app_name }} version:${{ inputs.version }}"
           git push
