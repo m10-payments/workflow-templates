@@ -33,7 +33,7 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
       - name: update ${{ inputs.argo_app_name }} service
         run: |
-          echo -n '${{ inputs.version }}' > ./${{ inputs.argo_app_name }}/version.txt
+          echo -n '${{ inputs.version }}' > ./${{ inputs.argo_app_name }}/version-${{ inputs.env_name }}.txt
           git config user.name github-actions
           git config user.email github-actions@pashapay.az
           git add ./${{ inputs.argo_app_name }}/version.txt
