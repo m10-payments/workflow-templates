@@ -19,9 +19,12 @@ jobs:
   test:
     runs-on: ubuntu-20.04
     steps:
+      - name: resolve input values
+        run: |
+          echo "inputs_version=${{ inputs.version }}" >> $GITHUB_ENV
       - uses: actions/checkout@v2
         with:
-          ref: ${{ inputs.version }}
+          ref: ${{ env.inputs_version }}
       - name: Get latest Corretto URL
         id: get-latest-corretto-url
         run: >-
