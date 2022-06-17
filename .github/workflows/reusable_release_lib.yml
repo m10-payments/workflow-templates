@@ -59,9 +59,12 @@ jobs:
     needs: test
     runs-on: ubuntu-20.04
     steps:
+      - name: resolve input values
+        run: |
+          echo "inputs_version=${{ inputs.version }}" >> $GITHUB_ENV
       - uses: actions/checkout@v2
         with:
-          ref: ${{ inputs.version }}
+          ref: ${{ env.inputs_version }}
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
