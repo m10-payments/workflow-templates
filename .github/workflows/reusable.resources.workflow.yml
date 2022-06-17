@@ -57,7 +57,7 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
+        uses: hashicorp/setup-terraform@v2
 
       - run: |
           git config --local --remove-section http."https://github.com/"
