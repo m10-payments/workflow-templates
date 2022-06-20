@@ -61,7 +61,7 @@ jobs:
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
       - name: Install system packages
-        run: yum install jq-1.5 -y -q
+        run: yum install git jq-1.5 -y -q
 
       - name: Put release tag
         run: |
