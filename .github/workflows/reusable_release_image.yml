@@ -21,6 +21,9 @@ jobs:
       dev_tag: ${{ steps.dev_image.outputs.tag }}
       release_tag: ${{ steps.meta.outputs.version }}
     steps:
+      - name: resolve input values
+        run: |
+          echo "inputs_repository_name=${{ inputs.repository_name }}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - name: Pick current image version
         id: dev_image
@@ -42,7 +45,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.repository_name }}
+          images: ${{ steps.login-ecr.outputs.registry }}/${{ env.inputs_repository_name }}
           tags: |
             type=semver,pattern={{version}}
           flavor: |
@@ -53,6 +56,9 @@ jobs:
     runs-on: ubuntu-20.04
     container: amazon/aws-cli:2.5.7
     steps:
+      - name: resolve input values
+        run: |
+          echo "inputs_repository_name=${{ inputs.repository_name }}" >> $GITHUB_ENV
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -65,5 +71,5 @@ jobs:
 
       - name: Put release tag
         run: |
-          MANIFEST=$(aws ecr batch-get-image --repository-name ${{ inputs.repository_name }} --image-ids imageTag=${{ needs.version.outputs.dev_tag }} --output json | jq --raw-output --join-output '.images[0].imageManifest')
-          aws ecr put-image --repository-name ${{ inputs.repository_name }} --image-tag ${{ needs.version.outputs.release_tag }} --image-manifest "$MANIFEST"
+          MANIFEST=$(aws ecr batch-get-image --repository-name ${{  env.inputs_repository_name }} --image-ids imageTag=${{ needs.version.outputs.dev_tag }} --output json | jq --raw-output --join-output '.images[0].imageManifest')
+          aws ecr put-image --repository-name ${{  env.inputs_repository_name }} --image-tag ${{ needs.version.outputs.release_tag }} --image-manifest "$MANIFEST"
