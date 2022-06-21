@@ -1,0 +1,32 @@
+name: Maven Test
+
+on:
+  workflow_call:
+    secrets:
+      GH_USER:
+        required: true
+      GH_TOKEN:
+        required: true
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: corretto
+          java-version: '17'
+          architecture: x64
+
+      - name: java version
+        run: java --version
+      - name: maven version
+        run: mvn --version
+      - name: test
+        run: mvn test
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_USERNAME: ${{ secrets.GH_USER }}
