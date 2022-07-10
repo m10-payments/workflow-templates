@@ -6,7 +6,7 @@ on:
       version:
         required: true
         type: string
-      env_name:
+      envName:
         required: true
         type: string
       deploy_name:
@@ -33,9 +33,9 @@ on:
         required: true
 jobs:
   deploy:
-    name: "Deploy version: ${{ inputs.version }} to env: ${{ inputs.env_name }}"
+    name: "Deploy version: ${{ inputs.version }} to env: ${{ inputs.envName }}"
     runs-on: ubuntu-20.04
-    environment: ${{ inputs.env_name }}
+    environment: ${{ inputs.envName }}
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
@@ -72,6 +72,6 @@ jobs:
           helm upgrade --install \
           --create-namespace \
           --namespace ${{ inputs.namespace }} \
-          -f ${{ inputs.env_name }}.yaml \
+          -f ${{ inputs.envName }}.yaml \
           --set image.tag=${{ inputs.version }} \
           ${{ inputs.deploy_name }} ${{ inputs.chart_path }}
