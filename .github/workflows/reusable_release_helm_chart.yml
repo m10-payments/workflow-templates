@@ -1,0 +1,46 @@
+name: Release Helm Chart
+
+on:
+  workflow_call:
+    inputs:
+      chart_name:
+        required: true
+        type: string
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      AWS_DEFAULT_REGION:
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Get version from Chart.yaml
+        id: chart-version
+        run: |
+          echo "::set-output name=version::$(helm show chart ${{ inputs.chart_name }} | grep '^version' | awk -F':' '{print $NF}' | sed 's/ //g')"
+
+      - name: Package and push helm chart to Amazon ECR
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          CHART_VERSION: ${{ steps.chart-version.outputs.version }}
+        run: |
+          helm package ${{ inputs.chart_name }}
+          helm push ${{ inputs.chart_name }}-${{ env.CHART_VERSION }}.tgz oci://$REGISTRY
