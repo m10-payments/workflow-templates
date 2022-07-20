@@ -42,6 +42,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ inputs.ecr_repo }}
           IMAGE_TAG: ${{ inputs.version }}
+          GH_USERNAME: ${{ secrets.GH_USERNAME }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           docker build --build-arg GH_TOKEN=$GH_TOKEN \
