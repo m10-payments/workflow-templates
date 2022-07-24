@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-20.04
     environment: ${{ inputs.env_name }}
     env:
-      version_file_path: ./environment/${{ inputs.env_name }}/${{ inputs.argo_app_name }}/version.txt
+      version_file_path: ./environments/${{ inputs.env_name }}/${{ inputs.argo_app_name }}/version.txt
     steps:
       - name: Checkout argocd repo
         uses: actions/checkout@v3
