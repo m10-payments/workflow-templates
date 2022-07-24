@@ -48,6 +48,7 @@ jobs:
       # - run: echo "TF_VAR_db_prefix=$(echo $GITHUB_REF_NAME | sed -r 's/\//-/g' | awk '{print tolower($0)}')" >> $GITHUB_ENV
       - run: echo "TF_VAR_topic_prefix=$(echo $GITHUB_REF_NAME | sed -r 's/\//-/g' | awk '{print tolower($0)}')" >> $GITHUB_ENV
       - run: echo "TF_VAR_aws_route53_record_name=$(echo $GITHUB_REF_NAME | sed -r 's/\//-/g' | awk '{print tolower($0)}')" >> $GITHUB_ENV
+      - run: echo "TF_VAR_argocd_target_branch=$GITHUB_REF_NAME" >> $GITHUB_ENV
 
       - name: Checkout repo
         uses: actions/checkout@v3
