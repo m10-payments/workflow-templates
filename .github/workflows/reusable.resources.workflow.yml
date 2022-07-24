@@ -53,7 +53,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: m10-payments/devops-infrastructure
-          ref: 'master'
+          ref: 'feature/M10-118'
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup Terraform
@@ -66,7 +66,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - run: env
-      
+
       - name: "[dbs] Terraform Init"
         id: init-dbs
         working-directory: ./terraform/feature/dbs
