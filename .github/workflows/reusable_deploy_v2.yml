@@ -16,6 +16,10 @@ on:
         required: false
         type: string
         default: "default"
+      target_branch:
+        required: false
+        type: string
+        default: "main"
     secrets:
       GH_TOKEN:
         required: true
@@ -24,18 +28,20 @@ jobs:
     name: "Deploy version: ${{ inputs.version }} to env: ${{ inputs.env_name }}"
     runs-on: ubuntu-20.04
     environment: ${{ inputs.env_name }}
+    env:
+      version_file_path: ./environment/${{ inputs.env_name }}/${{ inputs.argo_app_name }}/version.txt
     steps:
       - name: Checkout argocd repo
         uses: actions/checkout@v3
         with:
           repository: m10-payments/argocd
-          ref: 'main'
+          ref: ${{ inputs.target_branch }}
           token: ${{ secrets.GH_TOKEN }}
       - name: update ${{ inputs.argo_app_name }} service
         run: |
-          echo -n '${{ inputs.version }}' > ./${{ inputs.argo_app_name }}/version-${{ inputs.env_name }}.txt
+          echo -n '${{ inputs.version }}' > ${{ env.version_file_path }}
           git config user.name github-actions
           git config user.email github-actions@pashapay.az
-          git add ./${{ inputs.argo_app_name }}/version-${{ inputs.env_name }}.txt
+          git add ${{ env.version_file_path }}
           git commit --allow-empty -m "chore(release): rollout ${{ inputs.argo_app_name }} version:${{ inputs.version }}"
           git push
