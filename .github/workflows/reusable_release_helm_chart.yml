@@ -13,7 +13,7 @@ env:
 
 jobs:
   release:
-  name: Release Helm Chart ${{ inputs.chart_name }}
+    name: Release Helm Chart ${{ inputs.chart_name }}
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
