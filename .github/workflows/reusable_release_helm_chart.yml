@@ -13,6 +13,7 @@ env:
 
 jobs:
   release:
+  name: Release Helm Chart ${{ inputs.chart_name }}
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
@@ -23,10 +24,13 @@ jobs:
         run: |
           echo "::set-output name=version::$(helm show chart ${{ inputs.chart_name }} | grep '^version' | awk -F':' '{print $NF}' | sed 's/ //g')"
 
-      - name: Package and push helm chart to Amazon ECR
+      - name: Package Helm Chart
+        run: |
+          helm package ${{ inputs.chart_name }}
+
+      - name: Push Helm Chart to remote registry
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           CHART_VERSION: ${{ steps.chart-version.outputs.version }}
         run: |
-          helm package ${{ inputs.chart_name }}
-          helm push ${{ inputs.chart_name }}-${{ env.CHART_VERSION }}.tgz oci://$REGISTRY
+          helm push ${{ inputs.chart_name }}-${{ env.CHART_VERSION }}.tgz $REGISTRY
