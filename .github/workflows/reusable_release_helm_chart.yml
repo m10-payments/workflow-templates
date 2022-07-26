@@ -7,7 +7,8 @@ on:
         required: true
         type: string
     secrets:
-
+      REGISTRY_PASSWORD:
+        required: true
 
 env:
   REGISTRY: "oci://ghcr.io/m10-payments/"
@@ -31,7 +32,7 @@ jobs:
 
       - name: Login to OCI registry
         run: |
-          echo $REGISTRY-PASSWORD | helm registry login -u admin-m10 --password-stdin
+          echo $REGISTRY_PASSWORD | helm registry login -u admin-m10 --password-stdin
 
       - name: Push Helm Chart to remote registry
         env:
