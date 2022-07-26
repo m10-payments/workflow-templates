@@ -7,7 +7,7 @@ on:
         required: true
         type: string
     secrets:
-      REGISTRY_PASSWORD:
+      registry_password:
         required: true
 
 env:
@@ -32,7 +32,7 @@ jobs:
 
       - name: Login to OCI registry
         run: |
-          echo $REGISTRY_PASSWORD | helm registry login -u admin-m10 --password-stdin
+          echo ${{ secrets.registry_password }} | helm registry login -u admin-m10 --password-stdin
 
       - name: Push Helm Chart to remote registry
         env:
