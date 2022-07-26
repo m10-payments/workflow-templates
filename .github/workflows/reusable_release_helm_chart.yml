@@ -6,7 +6,8 @@ on:
       chart_name:
         required: true
         type: string
-    # secrets:
+    secrets:
+
 
 env:
   REGISTRY: "oci://ghcr.io/m10-payments/"
@@ -27,6 +28,10 @@ jobs:
       - name: Package Helm Chart
         run: |
           helm package ${{ inputs.chart_name }}
+
+      - name: Login to OCI registry
+        run: |
+          echo $REGISTRY-PASSWORD | helm registry login -u admin-m10 --password-stdin
 
       - name: Push Helm Chart to remote registry
         env:
