@@ -32,7 +32,7 @@ jobs:
 
       - name: Login to OCI registry
         run: |
-          echo ${{ secrets.registry_password }} | helm registry login -u admin-m10 --password-stdin
+          echo ${{ secrets.registry_password }} | helm registry login $REGISTRY -u admin-m10 --password-stdin
 
       - name: Push Helm Chart to remote registry
         env:
