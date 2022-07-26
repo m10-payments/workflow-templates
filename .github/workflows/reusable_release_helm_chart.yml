@@ -30,7 +30,6 @@ jobs:
 
       - name: Push Helm Chart to remote registry
         env:
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           CHART_VERSION: ${{ steps.chart-version.outputs.version }}
         run: |
           helm push ${{ inputs.chart_name }}-${{ env.CHART_VERSION }}.tgz $REGISTRY
