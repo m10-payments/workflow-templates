@@ -11,7 +11,7 @@ on:
         required: true
 
 env:
-  REGISTRY: "oci://ghcr.io/m10-payments/"
+  REGISTRY: "ghcr.io/m10-payments/"
 
 jobs:
   release:
@@ -38,4 +38,4 @@ jobs:
         env:
           CHART_VERSION: ${{ steps.chart-version.outputs.version }}
         run: |
-          helm push ${{ inputs.chart_name }}-${{ env.CHART_VERSION }}.tgz $REGISTRY
+          helm push ${{ inputs.chart_name }}-${{ env.CHART_VERSION }}.tgz oci://${{ env.REGISTRY }}
