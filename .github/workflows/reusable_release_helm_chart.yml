@@ -6,13 +6,10 @@ on:
       chart_name:
         required: true
         type: string
-    secrets:
-      AWS_ACCESS_KEY_ID:
-        required: true
-      AWS_SECRET_ACCESS_KEY:
-        required: true
-      AWS_DEFAULT_REGION:
-        required: true
+    # secrets:
+
+env:
+  REGISTRY: "oci://ghcr.io/m10-payments/"
 
 jobs:
   release:
@@ -20,17 +17,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
 
       - name: Get version from Chart.yaml
         id: chart-version
