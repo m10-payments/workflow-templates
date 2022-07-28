@@ -33,6 +33,8 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
       OVPN_PROFILE_ENCODED: ${{ secrets.OVPN_PROFILE_ENCODED }}
+      TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
+      TF_VAR_argocd_target_branch: ${{ inputs.branch_name }}
       TF_VAR_kafka_bootstrap_servers: "b-1.dev-msk-cluster.y7r5c4.c6.kafka.eu-central-1.amazonaws.com:9092,b-2.dev-msk-cluster.y7r5c4.c6.kafka.eu-central-1.amazonaws.com:9092,b-3.dev-msk-cluster.y7r5c4.c6.kafka.eu-central-1.amazonaws.com:9092"
     steps:
       - run: echo "Clean up stand for branch ${{ inputs.branch_name }}"
@@ -40,7 +42,6 @@ jobs:
       - run: echo "TF_VAR_k8s_namespace=$(echo ${{ inputs.branch_name }} | sed -r 's/\//-/g' | awk '{print tolower($0)}')" >> $GITHUB_ENV
       - run: echo "TF_VAR_topic_prefix=$(echo ${{ inputs.branch_name }} | sed -r 's/\//-/g' | awk '{print tolower($0)}')" >> $GITHUB_ENV
       - run: echo "TF_VAR_aws_route53_record_name=$(echo ${{ inputs.branch_name }} | sed -r 's/\//-/g' | awk '{print tolower($0)}')" >> $GITHUB_ENV
-      - run: echo "TF_VAR_argocd_target_branch=${{ inputs.branch_name }} >> $GITHUB_ENV"
 
       - name: Checkout repo
         uses: actions/checkout@v3
