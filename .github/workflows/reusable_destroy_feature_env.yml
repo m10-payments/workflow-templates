@@ -108,14 +108,14 @@ jobs:
       - name: "[k8s] Terraform destroy"
         working-directory: ./terraform/feature/k8s
         id: destroy-k8s
-        run: terraform destroy -auto-approve k8s.tfplan
+        run: terraform apply k8s.tfplan
 
       - name: "[kafka] Terraform destroy"
         working-directory: ./terraform/feature/kafka
         id: destroy-kafka
-        run: terraform destroy -auto-approve kafka.tfplan
+        run: terraform apply kafka.tfplan
 
       - name: "[dns] Terraform destroy"
         working-directory: ./terraform/feature/dns
         id: destroy-dns
-        run: terraform destroy -auto-approve dns.tfplan
+        run: terraform apply dns.tfplan
