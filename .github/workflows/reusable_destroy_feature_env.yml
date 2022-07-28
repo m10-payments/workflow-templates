@@ -31,7 +31,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      DEV_KUBE_CONFIG: ${{ secrets.DEV_KUBE_CONFIG }}
+      KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
       OVPN_PROFILE_ENCODED: ${{ secrets.OVPN_PROFILE_ENCODED }}
       TF_VAR_kafka_bootstrap_servers: "b-1.dev-msk-cluster.y7r5c4.c6.kafka.eu-central-1.amazonaws.com:9092,b-2.dev-msk-cluster.y7r5c4.c6.kafka.eu-central-1.amazonaws.com:9092,b-3.dev-msk-cluster.y7r5c4.c6.kafka.eu-central-1.amazonaws.com:9092"
     steps:
@@ -77,8 +77,8 @@ jobs:
 
       - name: install deps
         run: |
-          apt-get update -qq
-          apt-get install -qq apt-transport-https ca-certificates build-essential openvpn libxml2-utils
+          sudo apt-get update -qq
+          sudo apt-get install -qq apt-transport-https ca-certificates build-essential openvpn libxml2-utils
 
       - name: Open VPN
         run: echo $OVPN_PROFILE_ENCODED | base64 -d > ci.ovpn && sudo openvpn --config ci.ovpn &
