@@ -47,7 +47,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: m10-payments/devops-infrastructure
-          ref: 'master'
+          ref: 'feature/M10-684-add-finalizer'
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup Terraform
